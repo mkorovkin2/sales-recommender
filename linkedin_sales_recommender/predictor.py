@@ -9,24 +9,20 @@ import numpy as np
 import sys, getopt
 
 def main(argv):
+    # TODO: add docs to this method
+
     # Define default parameters
     dataframe_position_location = "example_position_dataframe.csv"
     dataframe_company_location = "example_company_dataframe.csv"
     number_of_samples_to_take = 50
     up_to_boundary = 20
+    # TODO: get arguments from command line
 
+    # Define global variables
     global df
     global df_companies
 
-    # Get command line arguments
-    # TODO: this
-    #try:
-    #    opts, args = getopt.getopt(argv, "h:p:o:n:m", ["position=", "company=", "samples=", "topbound="])
-    #except getopt.GetoptError:
-    #    'predictor.py -p [position dataframe] -c [company dataframe] -n [number of samples] -m [top boundary]'
-    #    sys.exit(2)
-
-    # Assemble dataframe of work histories
+    # Define work experience dataframe
     df = pd.read_csv(dataframe_position_location)
 
     # Clean out all rows which contain non-unicode characters
