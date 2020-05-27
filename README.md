@@ -64,19 +64,19 @@ These files are ```example_company_dataframe.csv``` and ```example_position_data
 
 ##### Running the analysis through command line
 Parameters
-* p: position dataframe location
-* c: company dataframe location
-* n: number of samples per boundary check
-* m: maximum boundary (calculated as (maximum boundary - 0.5) * 100)
+* -w, --workhistory: work history dataframe location
+* -c, --company: company dataframe location
+* -s, --samples: number of samples per boundary check
+* -t, --topbound: maximum boundary (calculated as (maximum boundary - 0.5) * 100)
 
-Command: ```python predictor.py -n -c -n -m```
+Command: ```python predictor.py -w -c -s -t```
 
 ---
 
 Example command usage:
-* p: default
+* w: default
 * c: default
-* n: 100 samples
-* m: stopping at a boundary of 0.65
+* s: 100 samples
+* t: stopping at a top boundary of 0.65
 
-Command: ```python predictor.py -n 100 -m 15```
+Command: ```python predictor.py -s 100 -t 15```
