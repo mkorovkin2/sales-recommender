@@ -9,14 +9,48 @@ import numpy as np
 import sys, getopt
 
 def main(argv):
-    # TODO: add docs to this method
+    """Main method
+
+    Parameters
+    ----------
+    argv : str
+        Command line input arguments
+
+    Returns
+    -------
+    Nothing
+
+    """
 
     # Define default parameters
     dataframe_position_location = "example_position_dataframe.csv"
     dataframe_company_location = "example_company_dataframe.csv"
     number_of_samples_to_take = 50
     up_to_boundary = 20
-    # TODO: get arguments from command line
+
+    # Get command line parameters
+    try:
+        opts, args = getopt.getopt(argv, "hw:hc:s:t:", ["workhistory=", "company=", "samples=", "topbound="])
+    except getopt.GetoptError:
+        print('test.py -i <inputfile> -o <outputfile>')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print('predictor.py' +\
+                  '\n\t-w <work history dataframe location>' +\
+                  '\n\t-c <company dataframe location>' +\
+                  '\n\t-s <number of samples per iteration>' +\
+                  '\n\t-t <top decimal boundary; see documentation>')
+            sys.exit()
+        elif opt in ("-w", "--workhistory"):
+            dataframe_position_location = arg
+        elif opt in ("-c", "--company"):
+            dataframe_company_location = arg
+        elif opt in ("-s", "--samples"):
+            number_of_samples_to_take = arg
+        elif opt in ("-t", "--topbound"):
+            up_to_boundary = arg
+
 
     # Define global variables
     global df
@@ -39,7 +73,13 @@ def main(argv):
     # Print statistics on the data
     print("- - - Starting - - -")
     print(f"Work history classification dataframe dimensions: {df.shape}")
+    print(df.rec.value_counts())
+    print()
     print(f"Company classification dataframe dimensions:      {df_companies.shape}")
+    print(df_companies.label.value_counts())
+    print()
+    print(f"Number of unique individuals:                     {df.name.unique().shape[0]}")
+    print()
 
     # By default, run simulation
     run_simulations(num_sample=number_of_samples_to_take, top_boundary=up_to_boundary)
