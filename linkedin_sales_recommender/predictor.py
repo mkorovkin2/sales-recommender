@@ -25,14 +25,20 @@ def main(argv):
     # Define default parameters
     dataframe_position_location = "example_position_dataframe.csv"
     dataframe_company_location = "example_company_dataframe.csv"
+    dataframe_individual_location = "example_individual_dataframe.csv"
+
     number_of_samples_to_take = 50
     up_to_boundary = 20
 
     # Get command line parameters
     try:
-        opts, args = getopt.getopt(argv, "hw:hc:s:t:", ["workhistory=", "company=", "samples=", "topbound="])
+        opts, args = getopt.getopt(argv, "hw:hc:hi:s:t:", ["workhistory=", "company=", "samples=", "topbound="])
     except getopt.GetoptError:
-        print('test.py -i <inputfile> -o <outputfile>')
+        print('predictor.py' + \
+              '\n\t-w <work history dataframe location>' + \
+              '\n\t-c <company dataframe location>' + \
+              '\n\t-s <number of samples per iteration>' + \
+              '\n\t-t <top decimal boundary; see documentation>')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
@@ -46,6 +52,8 @@ def main(argv):
             dataframe_position_location = arg
         elif opt in ("-c", "--company"):
             dataframe_company_location = arg
+        elif opt in ("-i", "--individual"):
+            dataframe_individual_location = arg
         elif opt in ("-s", "--samples"):
             number_of_samples_to_take = arg
         elif opt in ("-t", "--topbound"):
@@ -55,6 +63,8 @@ def main(argv):
     # Define global variables
     global df
     global df_companies
+    global individuals_map
+    individuals_map = {}
 
     # Define work experience dataframe
     df = pd.read_csv(dataframe_position_location)
@@ -69,6 +79,14 @@ def main(argv):
 
     # Build an easily-accessible set of company names for future use
     df_companies_set = set(list(df_companies.name))
+
+    # Load individuals and create a map of them
+    df_individuals = pd.read_csv(dataframe_individual_location)
+    for row in df_individuals.iterrows():
+        name = row[1]['name']
+        label = row[1]['label']
+        individuals_map[name] = label
+    del df_individuals
 
     # Print statistics on the data
     print("- - - Starting - - -")
@@ -276,13 +294,13 @@ def classify_keyword(pos):
 
     return score
 
-def predict_person_label(ptest, clf, vect, clf_company, vect_company):
-    """Method to classify an individual based on preior work experience and companies worked at
+def predict_person_label(ptest, clf, vect, clf_company, vect_company, auto_label=True):
+    """Method to classify an individual based on prior work experience and companies worked at
 
     Parameters
     ----------
-    ptest : float
-        Portion of dataset used for validation
+    ptest : list
+        List of indicies of individuals' names to classify
     clf : RandomForestClassifier
         Classifier for individual's positions
     vect : CountVectorizer
@@ -291,6 +309,9 @@ def predict_person_label(ptest, clf, vect, clf_company, vect_company):
         Classifier for company
     vect_company : CountVectorizer
         Count vectorizer for company
+    auto_label : Boolean
+        This should be set to true by default; the code will auto-label an individual if the individual's name is not
+        present in the input individual CSV dataframe
 
     Returns
     -------
@@ -308,6 +329,9 @@ def predict_person_label(ptest, clf, vect, clf_company, vect_company):
     # Make sure to not classify duplicate people
     name_indices = df.name[ptest].unique()
     name_dict = {}
+
+    # List of individuals
+    people_list = []
 
     # Performance statistics defined here
     ftp = 0
@@ -446,7 +470,17 @@ def predict_person_label(ptest, clf, vect, clf_company, vect_company):
         # Classify individual based on baseline classification boundary
         temp_res = "Yes" if total_result > baseline_result else "No"
         name_dict[name] = temp_res
-        real_res = "Yes" if real_result > baseline_result else "No"
+        real_res = ""
+
+        # If the individual is present in the pre-labeled data frame, label them as such
+        if name in individuals_map:
+            real_res = individuals_map[name]
+        else:
+            # Auto-label the person if they are not in the dataframe
+            if auto_label:
+                real_res = "Yes" if real_result > baseline_result else "No"
+            else:
+                raise Exception("Error: person not found in dataframe")
 
         # Update classifier statistics
         if temp_res == real_res and real_res == "Yes":
@@ -458,6 +492,12 @@ def predict_person_label(ptest, clf, vect, clf_company, vect_company):
         if temp_res != real_res and real_res == "No":
             ffp += 1
         ftt += 1
+
+        people_list.append([name, real_res])
+
+    df11 = pd.DataFrame(data=people_list, columns=["name", "label"])
+    df11.to_csv("/Users/mkorovkin/Desktop/example_individual_dataframe.csv")
+    exit(0)
 
     return name_dict,\
            [person_true_positive, person_false_positive, person_true_negative, person_false_negative, person_total_count],\
